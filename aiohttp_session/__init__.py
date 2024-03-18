@@ -200,11 +200,12 @@ def session_middleware(storage: "AbstractStorage") -> Middleware:
         if not isinstance(response, (web.Response, web.HTTPException)):
             # likely got websocket or streaming
             return response
-        if response.prepared:
-            raise RuntimeError("Cannot save session data into prepared response")
+
         session = request.get(SESSION_KEY)
         if session is not None:
             if session._changed:
+                if response.prepared:
+                    raise RuntimeError("Cannot save session data into prepared response")
                 await storage.save_session(request, response, session)
         if raise_response:
             raise cast(web.HTTPException, response)
